@@ -1,44 +1,77 @@
+from wordle import Wordle
 import random
-import sys
 from termcolor import colored
 
-def menuPrint():
-    print("PLAY WORDLE")
+def loadWordSet(path: str):
+    word_set = set()
+    with open(path, "r") as file:
+        for line in file.readlines():
+            word = line.strip().upper()
+            word_set.add(word)
+    return word_set
 
-def getRandomWord():
-    with open("dictionary.txt") as file:
-        words = file.read().splitlines()
-        return random.choice(words)
+def getRandomWord(wordset):
+    return random.choice(list(wordset))
 
-def gameBegin():
-    print("Type a 5-letter word and hit ENTER")
-    word = getRandomWord()
-    for attempt in range(6):
-        guess = input().lower()
+def drawBorder(lines, size=9, pad=1):
+    content_length = size + pad * 2
+    top_border = "┌" + "─" * content_length + "┐"
+    bottom_border = "└" + "─" * content_length + "┘"
+    space = " " * pad
+    print(top_border)
+    for line in lines:
+        print("│" + space + line + space + "│")
+    print(bottom_border)
 
-        while len(guess) != 5:
-            print("5-letter please: ", end="")
-            guess = input().lower()
-        
-        for i in range(5):
-            if guess[i] == word[i]:
-                print(colored(guess[i], "black", "on_green"), end="")
-            elif guess[i] in word:
-                print(colored(guess[i], "black", "on_light_yellow"), end="")
-            else:
-                print(guess[i], end="")
-
-        if guess == word:
-            print(colored("\nCORRECT. Congratulations!", "green"))
-            return
+def convertWord2Color(result):
+    result_color = []
+    for letter in result:
+        if letter.is_in_position:
+            backgr = "on_green"
+        elif letter.is_in_word:
+            backgr = "on_light_yellow"
         else:
-            print()
-    print(colored(f"WRONG. The answer is {word}!", "red"))
+            backgr = "on_red"
+        colored_letter = colored(letter.character, "black", backgr)
+        result_color.append(colored_letter)
+    return " ".join(result_color)
 
-# main    
-menuPrint()
+def displayResult(wordle: Wordle):
+    print("Your results: ...")
+    print(f"You have {wordle.remaining_attempts()} attempts left.")
 
-stillPlay = ""
-while stillPlay != "N" and stillPlay != "n":
-    gameBegin()
-    stillPlay = input("Hit ENTER to continue. Type N or n to quit.")
+    lines = []
+    for word in wordle.attempts:
+        result = wordle.guess(word)
+        colored_result_str = convertWord2Color(result)
+        lines.append(colored_result_str)
+
+    for _ in range(wordle.remaining_attempts()):
+        lines.append(" ".join(["_"] * wordle.WORD_LENGTH)) # - - - - - -
+
+    drawBorder(lines)
+
+def main():
+    word_set = loadWordSet("dictionary.txt")
+    word = getRandomWord(word_set)
+    wordle = Wordle(word)
+
+    while wordle.can_attempt():
+        attempt = input("\nType your guess: ").upper()
+        if len(attempt) != wordle.WORD_LENGTH:
+            print(colored(f"Word must be {wordle.WORD_LENGTH} characters long!", "red"), end="")
+            continue
+        if attempt not in word_set:
+            print(colored(f"{attempt} is not a valid word!", "red"), end="")
+            continue
+
+        wordle.attempt(attempt)
+        displayResult(wordle)
+
+    if wordle.gameWin():
+        print(colored("CORRECT. Congratulations!", "green"))
+    else:
+        print(colored(f"WRONG. The answer is {word}!", "red"))
+
+if __name__ == "__main__":
+    main()
