@@ -2,16 +2,16 @@ from wordle import Wordle
 import random
 from termcolor import colored
 
-def loadWordSet(path: str):
-    word_set = set()
+def loadWordSet(path: str): # get all words from db to a ls\ist/set
+    word_lst = []
     with open(path, "r") as file:
         for line in file.readlines():
             word = line.strip().upper()
-            word_set.add(word)
-    return word_set
+            word_lst.append(word)
+    return word_lst
 
 def getRandomWord(wordset):
-    return random.choice(list(wordset))
+    return random.choice(list(wordset)) # get random 
 
 def drawBorder(lines, size=9, pad=1):
     content_length = size + pad * 2
@@ -51,8 +51,8 @@ def displayResult(wordle: Wordle):
     drawBorder(lines)
 
 def main():
-    word_set = loadWordSet("src/dictionary.txt")
-    word = getRandomWord(word_set)
+    word_lst = loadWordSet("dictionary.txt")
+    word = getRandomWord(word_lst)
     wordle = Wordle(word)
 
     while wordle.stillAttempt():
@@ -60,10 +60,9 @@ def main():
         if len(attempt) != wordle.WORD_LENGTH:
             print(colored(f"Word must be {wordle.WORD_LENGTH} characters long!", "red"), end="")
             continue
-        if attempt not in word_set:
+        if attempt not in word_lst:
             print(colored(f"{attempt} is not a valid word!", "red"), end="")
             continue
-
         wordle.attempt(attempt)
         displayResult(wordle)
 
@@ -72,13 +71,14 @@ def main():
     else:
         print(colored(f"WRONG. The answer is {word}!", "red"))
 
+# NOT COVERED
 def WordsDatabase():
-    with open("src/words.txt", "r") as source, open('src/dictionary.txt', 'w') as destination:
+    with open("words.txt", "r") as source, open('dictionary.txt', 'w') as destination:
         for word in source.readlines():
             if len(word) == 6:
                 destination.write(word)
     print("All words loaded.")
 
 if __name__ == "__main__":
-    # WordsDatabase()
+    WordsDatabase() # NOT COVERED
     main()
